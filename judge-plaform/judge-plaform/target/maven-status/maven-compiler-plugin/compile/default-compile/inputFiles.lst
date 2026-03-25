@@ -1,0 +1,13 @@
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\config\ReviewerContextFilter.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\context\ReviewerContext.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\controller\JudgeController.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\JudgePlaformApplication.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\mapper\JudgeCaseMapper.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\pojo\constant\Constants.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\pojo\domain\JudgeCase.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\pojo\domain\R.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\pojo\mq\ManualCaseMessage.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\pojo\query\JudgeSubmitQuery.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\service\impl\JudgeServiceImpl.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\service\JudgeService.java
+C:\Users\Administrator\Desktop\ai-judge-sys\judge-plaform\judge-plaform\src\main\java\com\aijudge\judgeplaform\support\SnowflakeIdGenerator.java

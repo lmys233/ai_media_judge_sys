@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>人工审核提交</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --line: #d9e2ef;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --ok: #16a34a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    h1 { margin: 0 0 14px 0; font-size: 22px; }
+    .desc { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: 13px; margin-bottom: 6px; color: #374151; }
+    input, textarea, select, button {
+      width: 100%; border: 1px solid var(--line); border-radius: 8px;
+      font-size: 14px; padding: 10px 12px; outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
+    }
+    textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      cursor: pointer; background: var(--primary); color: #fff;
+      border: none; width: auto; min-width: 140px;
+    }
+    button.secondary { background: #6b7280; }
+    button.danger { background: var(--danger); }
+    .pill {
+      display: inline-block; border: 1px solid var(--line); border-radius: 999px;
+      padding: 2px 10px; font-size: 12px; color: #334155; background: #f8fafc;
+    }
+    .row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-top: 8px;
+    }
+    .row .left { flex: 1; min-width: 0; }
+    .evidence-text { font-size: 13px; color: #111827; word-break: break-all; }
+    .meta { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .counter { color: var(--muted); font-size: 12px; text-align: right; margin-top: 4px; }
+    .status { margin-top: 10px; font-size: 13px; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--danger); }
+    .hint { margin-top: 8px; color: var(--muted); font-size: 12px; }
+
+    .tabs { display: flex; gap: 0; margin-bottom: 14px; }
+    .tab {
+      flex: 1; text-align: center; padding: 10px 0; cursor: pointer;
+      border: 1px solid var(--line); background: var(--card); color: var(--muted);
+      font-size: 14px; font-weight: 500;
+    }
+    .tab:first-child { border-radius: 10px 0 0 10px; }
+    .tab:last-child { border-radius: 0 10px 10px 0; }
+    .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .preview-box {
+      margin-top: 12px; border: 1px dashed var(--line); border-radius: 8px;
+      padding: 16px; text-align: center; min-height: 160px;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+    }
+    .preview-box img { max-width: 100%; max-height: 400px; border-radius: 6px; }
+    .preview-box video { max-width: 100%; max-height: 400px; border-radius: 6px; }
+    .upload-area {
+      border: 2px dashed var(--line); border-radius: 8px; padding: 32px 16px;
+      text-align: center; cursor: pointer; color: var(--muted); font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .upload-area:hover { border-color: var(--primary); }
+    .upload-area.uploading { opacity: 0.6; pointer-events: none; }
+    .filename { margin-top: 8px; font-size: 12px; color: var(--text); word-break: break-all; }
+
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>人工审核提交</h1>
+
+  <div class="tabs">
+    <div class="tab active" data-type="text">文本审核</div>
+    <div class="tab" data-type="image">图片审核</div>
+    <div class="tab" data-type="video">视频审核</div>
+  </div>
+
+  <div class="card">
+    <div class="desc">后端接口配置</div>
+    <div>
+      <label for="apiUrl">提交地址</label>
+      <input id="apiUrl" type="text" value="/judge/submit" />
+    </div>
+  </div>
+
+  <!-- text mode -->
+  <div class="card" id="textSection">
+    <label for="content">待审核文本</label>
+    <textarea id="content" placeholder="输入需要审核的文本"></textarea>
+  </div>
+
+  <!-- image mode -->
+  <div class="card" id="imageSection" style="display:none;">
+    <label>上传图片</label>
+    <div id="imageUploadWrap">
+      <div class="upload-area" id="imageUploadArea">点击或拖拽图片到此处上传</div>
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none;" />
+    </div>
+    <div id="imageFileName" class="filename"></div>
+    <div class="preview-box" id="imagePreview" style="display:none;"></div>
+    <div style="margin-top:8px;display:none;" id="imageReuploadWrap">
+      <button type="button" class="secondary" id="imageReuploadBtn" style="min-width:120px;">重新上传</button>
+    </div>
+  </div>
+
+  <!-- video mode -->
+  <div class="card" id="videoSection" style="display:none;">
+    <label>上传视频</label>
+    <div id="videoUploadWrap">
+      <div class="upload-area" id="videoUploadArea">点击或拖拽视频到此处上传</div>
+      <input type="file" id="videoFileInput" accept="video/*" style="display:none;" />
+    </div>
+    <div id="videoFileName" class="filename"></div>
+    <div class="preview-box" id="videoPreview" style="display:none;"></div>
+    <div style="margin-top:8px;display:none;" id="videoReuploadWrap">
+      <button type="button" class="secondary" id="videoReuploadBtn" style="min-width:120px;">重新上传</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label for="violationType">违规类型（打标用）</label>
+        <select id="violationType">
+          <option value="normal">normal</option>
+          <option value="abuse">abuse</option>
+          <option value="violence">violence</option>
+          <option value="porn">porn</option>
+          <option value="politics">politics</option>
+          <option value="other">other</option>
+        </select>
+      </div>
+      <div>
+        <label for="reviewReason">审核原因（最多 50 字）</label>
+        <textarea id="reviewReason" maxlength="50" placeholder="例如：存在辱骂并带有威胁语义" style="min-height:60px;"></textarea>
+        <div class="counter"><span id="reasonCount">0</span>/50</div>
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top:12px;">
+      <button id="addEvidenceBtn" type="button">添加证据</button>
+      <button id="clearEvidenceBtn" type="button" class="secondary">清空证据</button>
+    </div>
+    <div class="hint" id="evidenceHint">先在"待审核文本"里框选一段文字，再点击"添加证据"。</div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div>证据列表（evidence）</div>
+      <span class="pill" id="typeSummary">违规类型：无</span>
+    </div>
+    <div id="evidenceList"></div>
+  </div>
+
+  <div class="card">
+    <div class="actions">
+      <button id="submitBtn" type="button">提交审核结果</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+</div>
+
+<script>
+  let currentMediaType = "text";
+  let selectedFile = null;
+  const evidenceItems = [];
+
+  const contentEl = document.getElementById("content");
+  const reasonEl = document.getElementById("reviewReason");
+  const reasonCountEl = document.getElementById("reasonCount");
+  const evidenceListEl = document.getElementById("evidenceList");
+  const typeSummaryEl = document.getElementById("typeSummary");
+  const statusEl = document.getElementById("status");
+  const evidenceHintEl = document.getElementById("evidenceHint");
+
+  // --- tab switching ---
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentMediaType = tab.dataset.type;
+      selectedFile = null;
+
+      document.getElementById("textSection").style.display = currentMediaType === "text" ? "" : "none";
+      document.getElementById("imageSection").style.display = currentMediaType === "image" ? "" : "none";
+      document.getElementById("videoSection").style.display = currentMediaType === "video" ? "" : "none";
+
+      document.getElementById("imagePreview").style.display = "none";
+      document.getElementById("imagePreview").innerHTML = "";
+      document.getElementById("imageFileName").textContent = "";
+      document.getElementById("imageUploadWrap").style.display = "";
+      document.getElementById("imageReuploadWrap").style.display = "none";
+      document.getElementById("imageFileInput").value = "";
+
+      document.getElementById("videoPreview").style.display = "none";
+      document.getElementById("videoPreview").innerHTML = "";
+      document.getElementById("videoFileName").textContent = "";
+      document.getElementById("videoUploadWrap").style.display = "";
+      document.getElementById("videoReuploadWrap").style.display = "none";
+      document.getElementById("videoFileInput").value = "";
+
+      if (currentMediaType === "text") {
+        evidenceHintEl.textContent = '先在"待审核文本"里框选一段文字，再点击"添加证据"。';
+      } else if (currentMediaType === "image") {
+        evidenceHintEl.textContent = '点击"添加证据"后输入图片违规内容描述。';
+      } else {
+        evidenceHintEl.textContent = '点击"添加证据"后输入视频违规时间点及描述。';
+      }
+
+      evidenceItems.length = 0;
+      renderEvidence();
+      setStatus("", false);
+    });
+  });
+
+  // --- file select (local preview only, upload on submit) ---
+  function setupFileSelect(areaId, inputId, fileNameId, previewId, uploadWrapId, reuploadWrapId, reuploadBtnId, acceptType) {
+    const area = document.getElementById(areaId);
+    const input = document.getElementById(inputId);
+    const uploadWrap = document.getElementById(uploadWrapId);
+    const reuploadWrap = document.getElementById(reuploadWrapId);
+    const reuploadBtn = document.getElementById(reuploadBtnId);
+
+    area.addEventListener("click", () => input.click());
+    area.addEventListener("dragover", e => { e.preventDefault(); area.style.borderColor = "var(--primary)"; });
+    area.addEventListener("dragleave", () => { area.style.borderColor = ""; });
+    area.addEventListener("drop", e => {
+      e.preventDefault();
+      area.style.borderColor = "";
+      if (e.dataTransfer.files.length > 0) previewFile(e.dataTransfer.files[0], fileNameId, previewId, uploadWrap, reuploadWrap, acceptType);
+    });
+    input.addEventListener("change", () => {
+      if (input.files.length > 0) previewFile(input.files[0], fileNameId, previewId, uploadWrap, reuploadWrap, acceptType);
+    });
+    reuploadBtn.addEventListener("click", () => {
+      selectedFile = null;
+      document.getElementById(fileNameId).textContent = "";
+      document.getElementById(previewId).style.display = "none";
+      document.getElementById(previewId).innerHTML = "";
+      uploadWrap.style.display = "";
+      reuploadWrap.style.display = "none";
+      input.value = "";
+    });
+  }
+
+  function previewFile(file, fileNameId, previewId, uploadWrap, reuploadWrap, acceptType) {
+    selectedFile = file;
+    document.getElementById(fileNameId).textContent = file.name;
+    uploadWrap.style.display = "none";
+    reuploadWrap.style.display = "";
+
+    const previewBox = document.getElementById(previewId);
+    previewBox.innerHTML = "";
+    previewBox.style.display = "";
+    if (acceptType === "image") {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      previewBox.appendChild(img);
+    } else {
+      const video = document.createElement("video");
+      video.src = URL.createObjectURL(file);
+      video.controls = true;
+      video.style.width = "100%";
+      previewBox.appendChild(video);
+    }
+    setStatus("文件已选择，请审核后提交。", false);
+  }
+
+  setupFileSelect("imageUploadArea", "imageFileInput", "imageFileName", "imagePreview", "imageUploadWrap", "imageReuploadWrap", "imageReuploadBtn", "image");
+  setupFileSelect("videoUploadArea", "videoFileInput", "videoFileName", "videoPreview", "videoUploadWrap", "videoReuploadWrap", "videoReuploadBtn", "video");
+
+  // --- evidence ---
+  function setStatus(text, isError) {
+    statusEl.textContent = text || "";
+    statusEl.className = "status " + (text ? (isError ? "err" : "ok") : "");
+  }
+
+  function renderEvidence() {
+    evidenceListEl.innerHTML = "";
+    evidenceItems.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="left">
+          <div class="evidence-text">${escapeHtml(item.text)}</div>
+          <div class="meta">type: ${item.type}</div>
+        </div>
+        <button type="button" class="danger" style="min-width:92px;">delete</button>
+      `;
+      row.querySelector("button").addEventListener("click", () => {
+        evidenceItems.splice(index, 1);
+        renderEvidence();
+      });
+      evidenceListEl.appendChild(row);
+    });
+    const typeSet = new Set(evidenceItems.map(i => i.type));
+    typeSummaryEl.textContent = "违规类型：" + (typeSet.size ? Array.from(typeSet).join(", ") : "无");
+  }
+
+  function escapeHtml(s) {
+    return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  }
+
+  document.getElementById("addEvidenceBtn").addEventListener("click", () => {
+    const type = document.getElementById("violationType").value;
+    let selected = "";
+    if (currentMediaType === "text") {
+      selected = contentEl.value.substring(contentEl.selectionStart, contentEl.selectionEnd).trim();
+      if (!selected) {
+        setStatus("请先在待审核文本中选中要作为证据的文本片段。", true);
+        return;
+      }
+    } else if (currentMediaType === "image") {
+      selected = prompt("请输入证据描述（如：图中出现违规内容）");
+    } else {
+      selected = prompt("请输入证据描述（如：视频第12秒出现违规画面）");
+      if (!selected || !selected.trim()) {
+        setStatus("证据描述不能为空。", true);
+        return;
+      }
+      selected = selected.trim();
+    }
+    if (selected.length > 50) {
+      setStatus("单条证据不超过 50 字。", true);
+      return;
+    }
+    evidenceItems.push({ text: selected, type });
+    renderEvidence();
+    setStatus("证据添加成功。", false);
+  });
+
+  document.getElementById("clearEvidenceBtn").addEventListener("click", () => {
+    evidenceItems.length = 0;
+    renderEvidence();
+    setStatus("证据已清空。", false);
+  });
+
+  reasonEl.addEventListener("input", () => {
+    reasonCountEl.textContent = String(reasonEl.value.length);
+  });
+
+  // --- submit ---
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    setStatus("", false);
+    const apiUrl = document.getElementById("apiUrl").value.trim();
+    const content = contentEl.value.trim();
+    const reviewReason = reasonEl.value.trim();
+
+    if (!apiUrl) { setStatus("请填写接口地址。", true); return; }
+    if (currentMediaType === "text" && !content) { setStatus("待审核文本不能为空。", true); return; }
+    if (currentMediaType !== "text" && !selectedFile) { setStatus("请先选择文件。", true); return; }
+    if (!reviewReason) { setStatus("审核原因不能为空。", true); return; }
+    if (reviewReason.length > 50) { setStatus("审核原因不能超过 50 字。", true); return; }
+    const selectedViolationType = document.getElementById("violationType").value;
+    const isNormalOnly = !evidenceItems.length && selectedViolationType === "normal";
+
+    if (!evidenceItems.length && !isNormalOnly) {
+      setStatus("请至少添加一条证据（normal 类型可不填）。", true);
+      return;
+    }
+
+    const types = isNormalOnly
+      ? ["normal"]
+      : Array.from(new Set(evidenceItems.map(item => item.type)));
+    const payload = {
+      mediaType: currentMediaType,
+      mediaId: null,
+      content: currentMediaType === "text" ? content : null,
+      violationTypes: types,
+      reviewReason,
+      evidence: evidenceItems.length ? evidenceItems.map(item => item.text) : []
+    };
+
+    const formData = new FormData();
+    formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+    if (currentMediaType !== "text" && selectedFile) {
+      formData.append("file", selectedFile);
+    }
+
+    try {
+      const resp = await fetch(apiUrl, {
+        method: "POST",
+        body: formData
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (data.code !== 200) {
+        setStatus("提交失败：" + (data.message || resp.statusText), true);
+        return;
+      }
+      setStatus(data.message || "提交成功", false);
+    } catch (err) {
+      setStatus("网络错误：" + (err && err.message ? err.message : "请检查后端服务"), true);
+    }
+  });
+</script>
+</body>
+</html>

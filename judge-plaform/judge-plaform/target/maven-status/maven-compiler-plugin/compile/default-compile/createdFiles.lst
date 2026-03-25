@@ -1,0 +1,14 @@
+com\aijudge\judgeplaform\JudgePlaformApplication.class
+com\aijudge\judgeplaform\service\impl\JudgeServiceImpl.class
+com\aijudge\judgeplaform\pojo\domain\R.class
+com\aijudge\judgeplaform\controller\JudgeController.class
+com\aijudge\judgeplaform\context\ReviewerContext.class
+com\aijudge\judgeplaform\pojo\mq\ManualCaseMessage.class
+com\aijudge\judgeplaform\config\ReviewerContextFilter.class
+com\aijudge\judgeplaform\service\JudgeService.class
+com\aijudge\judgeplaform\mapper\JudgeCaseMapper.class
+com\aijudge\judgeplaform\support\SnowflakeIdGenerator.class
+com\aijudge\judgeplaform\pojo\constant\Constants.class
+com\aijudge\judgeplaform\pojo\mq\ManualCaseMessage$ManualCaseMessageBuilder.class
+com\aijudge\judgeplaform\pojo\query\JudgeSubmitQuery.class
+com\aijudge\judgeplaform\pojo\domain\JudgeCase.class
