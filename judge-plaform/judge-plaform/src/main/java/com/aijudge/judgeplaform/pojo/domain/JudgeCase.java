@@ -29,4 +29,14 @@ public class JudgeCase {
     private Long reviewerId;
     @TableField("review_time")
     private java.time.LocalDateTime reviewTime;
+    @TableField("audit_status")
+    private String auditStatus;
+    @TableField("ai_result")
+    private String aiResult;
+    @TableField("ai_processed_at")
+    private java.time.LocalDateTime aiProcessedAt;
+    @TableField("retry_count")
+    private Integer retryCount;
+    @TableField("is_viewed")
+    private Boolean isViewed;
 }

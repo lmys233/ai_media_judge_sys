@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>人工审核提交</title>
+  <title>审核提交</title>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -93,12 +93,228 @@
     .upload-area.uploading { opacity: 0.6; pointer-events: none; }
     .filename { margin-top: 8px; font-size: 12px; color: var(--text); word-break: break-all; }
 
+    /* SSE notification styles */
+    .notification-area {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+    }
+    .notification-btn {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .notification-btn:hover { border-color: var(--primary); }
+    .notification-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+    .notification-badge.hidden { display: none; }
+    .notification-list {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      width: 320px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      display: none;
+    }
+    .notification-list.show { display: block; }
+    .notification-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .notification-item:last-child { border-bottom: none; }
+    .notification-item:hover { background: #f8fafc; }
+    .notification-item.unread { background: #eff6ff; }
+    .notification-item.unread:hover { background: #dbeafe; }
+    .notification-title {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .notification-title .label {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: normal;
+      margin-left: 6px;
+    }
+    .label-normal { background: #dcfce7; color: #166534; }
+    .label-abuse { background: #fef3c7; color: #92400e; }
+    .label-violence { background: #fee2e2; color: #991b1b; }
+    .label-porn { background: #f3e8ff; color: #6b21a8; }
+    .label-politics { background: #fef9c3; color: #854d0e; }
+    .notification-desc { font-size: 12px; color: var(--muted); }
+    .notification-time { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+    /* Audit mode selector */
+    .audit-mode-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+    .audit-mode-selector label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      margin: 0;
+      font-size: 13px;
+    }
+    .audit-mode-selector input[type="radio"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 12px;
+      width: 480px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .modal-header h3 { margin: 0; font-size: 16px; }
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--muted);
+      border-radius: 4px;
+    }
+    .modal-close:hover { background: #f3f4f6; }
+    .modal-body { padding: 20px; }
+    .result-row {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .result-label {
+      width: 80px;
+      font-size: 13px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .result-value {
+      flex: 1;
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .result-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .sse-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 12px;
+    }
+    .sse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+    }
+    .sse-dot.connected { background: var(--ok); }
+    .sse-dot.error { background: var(--danger); }
+
     @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
+<!-- SSE Notification Area -->
+<div class="notification-area">
+  <button class="notification-btn" id="notificationBtn" title="AI审核结果通知">
+    🔔
+    <span class="notification-badge hidden" id="notificationBadge">0</span>
+  </button>
+</div>
+
+<!-- Modal for AI Audit Result -->
+<div class="modal-overlay" id="resultModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>AI审核结果</h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Dynamic content -->
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
-  <h1>人工审核提交</h1>
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <h1>审核提交</h1>
+    <span class="sse-status" id="sseStatus">
+      <span class="sse-dot" id="sseDot"></span>
+      <span id="sseText">SSE连接中...</span>
+    </span>
+  </div>
 
   <div class="tabs">
     <div class="tab active" data-type="text">文本审核</div>
@@ -111,6 +327,21 @@
     <div>
       <label for="apiUrl">提交地址</label>
       <input id="apiUrl" type="text" value="/judge/submit" />
+    </div>
+  </div>
+
+  <!-- Audit Mode Selector -->
+  <div class="card">
+    <div class="desc">审核模式</div>
+    <div class="audit-mode-selector">
+      <label>
+        <input type="radio" name="auditMode" value="human" checked />
+        人工审核
+      </label>
+      <label>
+        <input type="radio" name="auditMode" value="ai" />
+        AI自动审核
+      </label>
     </div>
   </div>
 
@@ -196,6 +427,10 @@
   let selectedFile = null;
   const evidenceItems = [];
 
+  // SSE state
+  let eventSource = null;
+  let unreadCount = 0;
+
   const contentEl = document.getElementById("content");
   const reasonEl = document.getElementById("reviewReason");
   const reasonCountEl = document.getElementById("reasonCount");
@@ -203,6 +438,194 @@
   const typeSummaryEl = document.getElementById("typeSummary");
   const statusEl = document.getElementById("status");
   const evidenceHintEl = document.getElementById("evidenceHint");
+
+  // --- SSE Connection ---
+  function initSSE() {
+    const sseDot = document.getElementById("sseDot");
+    const sseText = document.getElementById("sseText");
+
+    try {
+      eventSource = new EventSource("/sse/connect");
+
+      eventSource.onopen = () => {
+        sseDot.className = "sse-dot connected";
+        sseText.textContent = "SSE已连接";
+      };
+
+      eventSource.onerror = () => {
+        sseDot.className = "sse-dot error";
+        sseText.textContent = "SSE连接异常";
+        // Try to reconnect after 5 seconds
+        setTimeout(initSSE, 5000);
+      };
+
+      eventSource.addEventListener("connected", (e) => {
+        console.log("SSE connected:", e.data);
+      });
+
+      eventSource.addEventListener("audit_result", (e) => {
+        console.log("Received audit_result:", e.data);
+        try {
+          const data = JSON.parse(e.data);
+          // Just show red dot, don't store details
+          unreadCount++;
+          updateNotificationBadge();
+        } catch (err) {
+          console.error("Failed to parse audit result:", err);
+        }
+      });
+
+    } catch (err) {
+      console.error("Failed to init SSE:", err);
+      sseDot.className = "sse-dot error";
+      sseText.textContent = "SSE连接失败";
+    }
+  }
+
+  function updateNotificationBadge() {
+    const badge = document.getElementById("notificationBadge");
+    if (unreadCount > 0) {
+      badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  }
+
+  function getStatusClass(label) {
+    switch(label) {
+      case 'normal': return 'label-normal';
+      case 'abuse': return 'label-abuse';
+      case 'violence': return 'label-violence';
+      case 'porn': return 'label-porn';
+      case 'politics': return 'label-politics';
+      default: return 'label-normal';
+    }
+  }
+
+  async function queryCaseDetail(caseId) {
+    try {
+      const resp = await fetch(`/judge/get?caseId=${caseId}`);
+      const data = await resp.json();
+      if (data.code === 200 && data.data) {
+        showCaseDetailModal(data.data);
+      } else {
+        alert("案例详情查询失败: " + (data.message || "未知错误"));
+      }
+    } catch (err) {
+      alert("查询失败: " + err.message);
+    }
+  }
+
+  function showCaseDetailModal(caseData) {
+    const modalBody = document.getElementById("modalBody");
+    const aiResult = caseData.aiResult ? JSON.parse(caseData.aiResult) : null;
+
+    modalBody.innerHTML = `
+      <div class="result-row">
+        <div class="result-label">案例ID</div>
+        <div class="result-value">${caseData.caseId}</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">媒体类型</div>
+        <div class="result-value">${caseData.mediaType}</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">内容</div>
+        <div class="result-value" style="max-height:150px;overflow-y:auto;">${escapeHtml(caseData.contentText || '-')}</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">违规类型</div>
+        <div class="result-value">${caseData.violationTypes || '-'}</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">审核状态</div>
+        <div class="result-value"><span class="result-badge ${getStatusClass(aiResult?.final_label)}">${caseData.auditStatus || '-'}</span></div>
+      </div>
+      ${aiResult ? `
+      <div class="result-row">
+        <div class="result-label">AI判定</div>
+        <div class="result-value"><span class="result-badge label-${aiResult.final_label}">${aiResult.final_label}</span> (置信度: ${(aiResult.confidence * 100).toFixed(1)}%)</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">AI理由</div>
+        <div class="result-value">${aiResult.reason || '-'}</div>
+      </div>
+      ` : ''}
+      <div class="result-row">
+        <div class="result-label">来源</div>
+        <div class="result-value">${caseData.source || '-'}</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">提交时间</div>
+        <div class="result-value">${caseData.reviewTime || '-'}</div>
+      </div>
+      ${caseData.aiProcessedAt ? `
+      <div class="result-row">
+        <div class="result-label">AI处理时间</div>
+        <div class="result-value">${caseData.aiProcessedAt}</div>
+      </div>
+      ` : ''}
+    `;
+
+    document.getElementById("resultModal").classList.add("show");
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  }
+
+  // Notification dropdown toggle - click goes to notifications page
+  document.getElementById("notificationBtn").addEventListener("click", (e) => {
+    // Reset count and go to notifications page
+    unreadCount = 0;
+    updateNotificationBadge();
+    window.location.href = 'notifications.html';
+  });
+
+  // Modal close
+  document.getElementById("modalClose").addEventListener("click", () => {
+    document.getElementById("resultModal").classList.remove("show");
+  });
+
+  document.getElementById("resultModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("resultModal")) {
+      document.getElementById("resultModal").classList.remove("show");
+    }
+  });
+
+  // Init SSE on page load
+  initSSE();
+
+  // --- audit mode toggle ---
+  const evidenceCard = document.querySelector('.card:has(#violationType)');
+  const evidenceListCard = document.getElementById("evidenceList").closest('.card');
+  const submitBtnCard = document.getElementById("submitBtn").closest('.card');
+
+  function toggleAuditModeUI(auditMode) {
+    if (auditMode === "ai") {
+      // AI模式：隐藏证据相关字段
+      if (evidenceCard) evidenceCard.style.display = "none";
+      if (evidenceListCard) evidenceListCard.style.display = "none";
+    } else {
+      // 人工模式：显示证据字段
+      if (evidenceCard) evidenceCard.style.display = "";
+      if (evidenceListCard) evidenceListCard.style.display = "";
+    }
+  }
+
+  // 监听审核模式切换
+  document.querySelectorAll('input[name="auditMode"]').forEach(radio => {
+    radio.addEventListener("change", (e) => {
+      toggleAuditModeUI(e.target.value);
+    });
+  });
+
+  // 初始化：根据当前选择的审核模式设置UI
+  const initialAuditMode = document.querySelector('input[name="auditMode"]:checked').value;
+  toggleAuditModeUI(initialAuditMode);
 
   // --- tab switching ---
   document.querySelectorAll(".tab").forEach(tab => {
@@ -244,7 +667,7 @@
     });
   });
 
-  // --- file select (local preview only, upload on submit) ---
+  // --- file select ---
   function setupFileSelect(areaId, inputId, fileNameId, previewId, uploadWrapId, reuploadWrapId, reuploadBtnId, acceptType) {
     const area = document.getElementById(areaId);
     const input = document.getElementById(inputId);
@@ -328,11 +751,6 @@
     typeSummaryEl.textContent = "违规类型：" + (typeSet.size ? Array.from(typeSet).join(", ") : "无");
   }
 
-  function escapeHtml(s) {
-    return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-            .replaceAll('"',"&quot;").replaceAll("'","&#39;");
-  }
-
   document.getElementById("addEvidenceBtn").addEventListener("click", () => {
     const type = document.getElementById("violationType").value;
     let selected = "";
@@ -377,31 +795,49 @@
     const apiUrl = document.getElementById("apiUrl").value.trim();
     const content = contentEl.value.trim();
     const reviewReason = reasonEl.value.trim();
+    const auditMode = document.querySelector('input[name="auditMode"]:checked').value;
 
     if (!apiUrl) { setStatus("请填写接口地址。", true); return; }
     if (currentMediaType === "text" && !content) { setStatus("待审核文本不能为空。", true); return; }
     if (currentMediaType !== "text" && !selectedFile) { setStatus("请先选择文件。", true); return; }
-    if (!reviewReason) { setStatus("审核原因不能为空。", true); return; }
-    if (reviewReason.length > 50) { setStatus("审核原因不能超过 50 字。", true); return; }
-    const selectedViolationType = document.getElementById("violationType").value;
-    const isNormalOnly = !evidenceItems.length && selectedViolationType === "normal";
 
-    if (!evidenceItems.length && !isNormalOnly) {
-      setStatus("请至少添加一条证据（normal 类型可不填）。", true);
-      return;
+    // AI模式下不需要手动打标，使用默认值
+    let payload;
+    if (auditMode === "ai") {
+      payload = {
+        mediaType: currentMediaType,
+        mediaId: null,
+        content: currentMediaType === "text" ? content : null,
+        violationTypes: ["normal"],  // AI会自动判定
+        reviewReason: "AI自动审核",
+        evidence: [],
+        auditMode: "ai"
+      };
+    } else {
+      // 人工审核模式需要完整验证
+      if (!reviewReason) { setStatus("审核原因不能为空。", true); return; }
+      if (reviewReason.length > 50) { setStatus("审核原因不能超过 50 字。", true); return; }
+      const selectedViolationType = document.getElementById("violationType").value;
+      const isNormalOnly = !evidenceItems.length && selectedViolationType === "normal";
+
+      if (!evidenceItems.length && !isNormalOnly) {
+        setStatus("请至少添加一条证据（normal 类型可不填）。", true);
+        return;
+      }
+
+      const types = isNormalOnly
+        ? ["normal"]
+        : Array.from(new Set(evidenceItems.map(item => item.type)));
+      payload = {
+        mediaType: currentMediaType,
+        mediaId: null,
+        content: currentMediaType === "text" ? content : null,
+        violationTypes: types,
+        reviewReason,
+        evidence: evidenceItems.length ? evidenceItems.map(item => item.text) : [],
+        auditMode: "human"
+      };
     }
-
-    const types = isNormalOnly
-      ? ["normal"]
-      : Array.from(new Set(evidenceItems.map(item => item.type)));
-    const payload = {
-      mediaType: currentMediaType,
-      mediaId: null,
-      content: currentMediaType === "text" ? content : null,
-      violationTypes: types,
-      reviewReason,
-      evidence: evidenceItems.length ? evidenceItems.map(item => item.text) : []
-    };
 
     const formData = new FormData();
     formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
@@ -420,6 +856,11 @@
         return;
       }
       setStatus(data.message || "提交成功", false);
+
+      // If AI mode, show notification that result will come via SSE
+      if (auditMode === "ai") {
+        setStatus("AI审核已提交，请等待结果推送...", false);
+      }
     } catch (err) {
       setStatus("网络错误：" + (err && err.message ? err.message : "请检查后端服务"), true);
     }

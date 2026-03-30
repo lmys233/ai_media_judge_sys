@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:UsersAdministratorDesktopai-judge-sysai-judge-sys -name *.yaml -o -name *.yml)",
+      "Bash(python -m py_compile src/app.py src/engine/audit_engine.py src/retrieval/service.py src/feature/desensitize.py src/models/contracts.py src/mq/result_producer.py)",
+      "Bash(/c/Users/Administrator/AppData/Local/Programs/Python/Python314/python.exe -m py_compile /c/Users/Administrator/Desktop/ai-judge-sys/ai-judge-sys/src/models/contracts.py 2>&1)",
+      "Bash(/c/Users/Administrator/AppData/Local/Programs/Python/Python314/python.exe -m py_compile /c/Users/Administrator/Desktop/ai-judge-sys/ai-judge-sys/src/feature/desensitize.py 2>&1)",
+      "Bash(./.venv/Scripts/python.exe -m src.app --worker ai-auto)",
+      "Bash(.venv/Scripts/python.exe -c \"from src.models.contracts import AuditResultMessage, ViolationDetail; from src.reasoning.judge import JudgeLLM; from src.feature.desensitize import DesensitizeProcessor; from src.retrieval.service import RetrievalService; from src.retrieval.reranker import SimpleReranker; from src.prelabel.text_nb import MultiLabelPrediction; print\\(''All imports successful''\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from src.engine.audit_engine import AuditEngine; print\\('AuditEngine import successful'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from src.app import WORKERS; print\\('app.py imports successful'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"\nfrom src.prelabel.text_nb import NaiveBayesTextClassifier\nclf = NaiveBayesTextClassifier\\(\\)\nresult = clf.predict_multi\\('我要杀了你这个垃圾，还有色情内容'\\)\nprint\\('Labels:', [p.label.value for p in result.predictions]\\)\nprint\\('Scores:', {p.label.value: p.risk_score for p in result.predictions}\\)\nprint\\('Top:', result.top_label.value\\)\n\")"
+    ]
+  }
+}

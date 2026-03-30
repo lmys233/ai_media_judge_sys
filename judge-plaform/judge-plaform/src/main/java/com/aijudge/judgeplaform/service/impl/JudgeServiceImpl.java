@@ -9,6 +9,8 @@ import com.aijudge.judgeplaform.service.FileService;
 import com.aijudge.judgeplaform.service.FileService;
 import com.aijudge.judgeplaform.service.JudgeService;
 import com.aijudge.judgeplaform.support.SnowflakeIdGenerator;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +35,10 @@ public class JudgeServiceImpl implements JudgeService {
             "normal", "abuse", "violence", "porn", "politics", "other"
     );
     private static final Set<String> ALLOWED_MEDIA_TYPES = Set.of("text", "image", "video");
+    private static final String AI_TASK_TOPIC = "audit.task";
     private static final String MANUAL_CASE_TOPIC = "audit.manual.case";
+    private static final String AUDIT_MODE_AI = "ai";
+    private static final String AUDIT_MODE_HUMAN = "human";
 
     private final JudgeCaseMapper judgeCaseMapper;
     private final RabbitTemplate rabbitTemplate;
@@ -75,22 +81,61 @@ public class JudgeServiceImpl implements JudgeService {
             judgeCase.setMediaUrl(mediaUrl);
         }
 
+        // Determine audit mode, default to human
+        String auditMode = query.getAuditMode();
+        if (auditMode == null) {
+            auditMode = AUDIT_MODE_HUMAN;
+        }
+        auditMode = auditMode.trim().toLowerCase();
+        boolean isAiMode = AUDIT_MODE_AI.equals(auditMode);
+
+        // Set initial audit status
+        judgeCase.setAuditStatus(isAiMode ? "pending" : "pending");
+        judgeCase.setRetryCount(0);
+        judgeCase.setSource(isAiMode ? "ai" : "human");
+        // Human submissions are already "viewed" since user just submitted them
+        judgeCase.setIsViewed(true);
+
         judgeCaseMapper.insert(judgeCase);
 
+        String traceId = UUID.randomUUID().toString();
         String contentForMq = "text".equals(mediaType) ? query.getContent() : mediaUrl;
 
-        ManualCaseMessage message = ManualCaseMessage.builder()
-                .trace_id(UUID.randomUUID().toString())
-                .case_id(String.valueOf(caseId))
-                .media_type(mediaType)
-                .content_text(contentForMq)
-                .violation_types(query.getViolationTypes())
-                .review_reason(query.getReviewReason())
-                .evidence(query.getEvidence())
-                .source("human")
-                .build();
+        if (isAiMode) {
+            // AI自动审核：发送到audit.task队列
+            String now = LocalDateTime.now().toString();
+            String aiTaskJson = "{"
+                    + "\"schema_version\":\"1.0.0\","
+                    + "\"trace_id\":\"" + escapeJson(traceId) + "\","
+                    + "\"task_id\":\"" + escapeJson(String.valueOf(caseId)) + "\","
+                    + "\"biz_id\":\"" + escapeJson(query.getMediaId() != null ? String.valueOf(query.getMediaId()) : "") + "\","
+                    + "\"media_type\":\"" + escapeJson(mediaType) + "\","
+                    + "\"media_url\":\"" + escapeJson(mediaUrl != null ? mediaUrl : "") + "\","
+                    + "\"content_text\":\"" + escapeJson(contentForMq) + "\","
+                    + "\"lang\":\"zh\","
+                    + "\"priority\":5,"
+                    + "\"source\":\"ai_submission\","
+                    + "\"created_at\":\"" + escapeJson(now) + "\","
+                    + "\"retry_count\":0,"
+                    + "\"max_retry\":3,"
+                    + "\"dedupe_key\":\"" + escapeJson(String.valueOf(caseId)) + "\""
+                    + "}";
+            rabbitTemplate.convertAndSend(AI_TASK_TOPIC, aiTaskJson);
+        } else {
+            // 人工审核：发送到audit.manual.case队列
+            ManualCaseMessage message = ManualCaseMessage.builder()
+                    .trace_id(traceId)
+                    .case_id(String.valueOf(caseId))
+                    .media_type(mediaType)
+                    .content_text(contentForMq)
+                    .violation_types(query.getViolationTypes())
+                    .review_reason(query.getReviewReason())
+                    .evidence(query.getEvidence())
+                    .source("human")
+                    .build();
+            rabbitTemplate.convertAndSend(MANUAL_CASE_TOPIC, toMessageJson(message));
+        }
 
-        rabbitTemplate.convertAndSend(MANUAL_CASE_TOPIC, toMessageJson(message));
         return caseId;
     }
 
@@ -204,5 +249,50 @@ public class JudgeServiceImpl implements JudgeService {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
+    }
+
+    @Override
+    public JudgeCase getCaseById(Long caseId) {
+        if (caseId == null) {
+            return null;
+        }
+        return judgeCaseMapper.selectById(caseId);
+    }
+
+    @Override
+    public List<JudgeCase> getUnviewedCases(Long reviewerId) {
+        if (reviewerId == null) {
+            return List.of();
+        }
+        LambdaQueryWrapper<JudgeCase> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(JudgeCase::getReviewerId, reviewerId)
+                .eq(JudgeCase::getIsViewed, false)
+                .orderByDesc(JudgeCase::getAiProcessedAt)
+                .orderByDesc(JudgeCase::getReviewTime);
+        return judgeCaseMapper.selectList(wrapper);
+    }
+
+    @Override
+    public void markCasesAsViewed(List<Long> caseIds) {
+        if (caseIds == null || caseIds.isEmpty()) {
+            return;
+        }
+        for (Long caseId : caseIds) {
+            JudgeCase caseObj = new JudgeCase();
+            caseObj.setCaseId(caseId);
+            caseObj.setIsViewed(true);
+            judgeCaseMapper.updateById(caseObj);
+        }
+    }
+
+    @Override
+    public List<JudgeCase> getCasesByIds(List<Long> caseIds) {
+        if (caseIds == null || caseIds.isEmpty()) {
+            return List.of();
+        }
+        return judgeCaseMapper.selectList(
+                Wrappers.<JudgeCase>lambdaQuery()
+                        .in(JudgeCase::getCaseId, caseIds)
+        );
     }
 }

@@ -10,5 +10,11 @@ CREATE TABLE IF NOT EXISTS `judge_case` (
   `source` VARCHAR(16) NOT NULL DEFAULT 'human' COMMENT 'human | ai',
   `reviewer_id` BIGINT NOT NULL COMMENT 'reviewer ID',
   `review_time` DATETIME NOT NULL COMMENT 'review time',
-  PRIMARY KEY (`case_id`)
+  `audit_status` VARCHAR(32) DEFAULT 'pending' COMMENT 'pending|parsing|prelabeled|reviewing|auto_approved|auto_rejected|needs_manual|human_resolved|failed',
+  `ai_result` JSON DEFAULT NULL COMMENT 'AI audit result: {final_label, confidence, reason}',
+  `ai_processed_at` DATETIME DEFAULT NULL COMMENT 'AI processed timestamp',
+  `retry_count` INT DEFAULT 0 COMMENT 'retry count',
+  `is_viewed` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'whether the case has been viewed by reviewer (0=unread, 1=read)',
+  PRIMARY KEY (`case_id`),
+  INDEX `idx_audit_status` (`audit_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='manual review result';
