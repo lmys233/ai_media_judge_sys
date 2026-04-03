@@ -103,4 +103,26 @@ public class SseEmitterManager {
     public int getConnectionCount() {
         return emitterMap.size();
     }
+
+    /**
+     * 广播审核失败通知给所有在线审核员
+     */
+    public void broadcastFailureNotification(Object notification) {
+        for (Map.Entry<Long, SseEmitter> entry : emitterMap.entrySet()) {
+            try {
+                entry.getValue().send(SseEmitter.event()
+                        .name("audit_failure")
+                        .data(notification));
+            } catch (IOException e) {
+                log.warn("SSE广播失败, reviewerId={}, error={}", entry.getKey(), e.getMessage());
+                emitterMap.remove(entry.getKey());
+                try {
+                    entry.getValue().complete();
+                } catch (Exception ex) {
+                    log.warn("关闭SSE连接失败, reviewerId={}", entry.getKey());
+                }
+            }
+        }
+        log.info("SSE广播审核失败通知完成, 连接数={}", emitterMap.size());
+    }
 }
