@@ -1,0 +1,10 @@
+{"text":"今天天气很好 我们一起学习","label":"normal","source":"seed","verified":true}
+{"text":"你好 世界 这是一个正常内容","label":"normal","source":"seed","verified":true}
+{"text":"你这个人真垃圾 滚开","label":"abuse","source":"seed","verified":true}
+{"text":"操你妈 脏话 攻击他人","label":"abuse","source":"seed","verified":true}
+{"text":"我要打死你 报复 砍人","label":"violence","source":"seed","verified":true}
+{"text":"血腥暴力 打架视频","label":"violence","source":"seed","verified":true}
+{"text":"裸露 色情 约炮","label":"porn","source":"seed","verified":true}
+{"text":"成人视频 情色 内容","label":"porn","source":"seed","verified":true}
+{"text":"政治敏感 选举 党派 争议","label":"politics","source":"seed","verified":true}
+{"text":"抗议集会 政治冲突","label":"politics","source":"seed","verified":true}

@@ -1,0 +1,132 @@
+version: "aegis2-zh-v1"
+source:
+  paper: "AEGIS2.0: A Diverse AI Safety Dataset and Risks Taxonomy for Alignment of LLM Guardrails"
+  notes: "Taxonomy extracted from Table 2 of the paper; adapted for Chinese moderation scenarios."
+
+labels:
+  decision_tier:
+    - safe
+    - needs_caution
+    - unsafe
+
+  core_categories:
+    - id: hate_identity
+      zh: 仇恨与身份攻击
+      severity: high
+    - id: suicide_self_harm
+      zh: 自杀与自残
+      severity: critical
+    - id: illegal_weapons
+      zh: 枪支与非法武器
+      severity: high
+    - id: pii_privacy
+      zh: 隐私与个人敏感信息
+      severity: high
+    - id: criminal_planning_confession
+      zh: 犯罪策划与犯罪供述
+      severity: high
+    - id: controlled_substances
+      zh: 管制药物与违禁物品
+      severity: high
+    - id: sexual
+      zh: 色情与性相关不当内容
+      severity: high
+    - id: violence
+      zh: 暴力与伤害
+      severity: high
+    - id: threat
+      zh: 威胁恐吓
+      severity: high
+    - id: harassment
+      zh: 骚扰辱骂
+      severity: medium
+    - id: profanity
+      zh: 脏话与粗俗表达
+      severity: medium
+    - id: other_high_risk
+      zh: 其他高风险
+      severity: high
+
+  fine_grained_categories:
+    - id: sexual_minor
+      zh: 涉未成年人性内容
+      severity: critical
+    - id: illegal_activity
+      zh: 非法活动
+      severity: high
+    - id: immoral_unethical
+      zh: 不道德/不伦理内容
+      severity: medium
+    - id: unauthorized_advice
+      zh: 未授权专业建议
+      severity: medium
+    - id: political_misinfo_conspiracy
+      zh: 政治误导/阴谋信息
+      severity: medium
+    - id: fraud_deception
+      zh: 欺诈与诱骗
+      severity: high
+    - id: copyright_trademark_plagiarism
+      zh: 版权商标与抄袭侵权
+      severity: medium
+    - id: gov_decision_making
+      zh: 政务关键决策误导
+      severity: high
+    - id: malware_manipulation
+      zh: 恶意软件与操纵行为
+      severity: high
+
+mapping_to_current_system:
+  normal:
+    include:
+      - safe
+  abuse:
+    include:
+      - hate_identity
+      - harassment
+      - profanity
+      - fraud_deception
+  violence:
+    include:
+      - violence
+      - threat
+      - illegal_weapons
+      - criminal_planning_confession
+      - suicide_self_harm
+  porn:
+    include:
+      - sexual
+      - sexual_minor
+  politics:
+    include:
+      - political_misinfo_conspiracy
+      - gov_decision_making
+  other:
+    include:
+      - pii_privacy
+      - controlled_substances
+      - illegal_activity
+      - malware_manipulation
+      - unauthorized_advice
+      - immoral_unethical
+      - copyright_trademark_plagiarism
+      - other_high_risk
+
+cn_bootstrap_keywords:
+  hate_identity: ["贱民", "种族", "歧视", "仇恨言论"]
+  suicide_self_harm: ["自杀", "轻生", "割腕", "结束生命"]
+  illegal_weapons: ["枪", "手枪", "炸药", "自制武器"]
+  pii_privacy: ["身份证号", "手机号", "住址", "银行卡"]
+  sexual: ["约炮", "裸照", "情色", "成人视频"]
+  sexual_minor: ["未成年", "幼女", "儿童色情"]
+  violence: ["打死", "砍人", "爆头", "施暴"]
+  threat: ["弄死你", "报复你", "威胁", "恐吓"]
+  harassment: ["傻逼", "垃圾", "滚开", "辱骂"]
+  profanity: ["操", "他妈", "妈的", "狗东西"]
+  fraud_deception: ["刷单", "诈骗", "骗钱", "钓鱼链接"]
+  political_misinfo_conspiracy: ["阴谋论", "政治谣言", "虚假选举信息"]
+
+policy_notes:
+  - "Core taxonomy defines classification schema; do not treat it as direct keyword blacklist."
+  - "Chinese production should expand with local language variants, slang, homophones, and code words."
+  - "High-risk/critical labels should trigger manual review when confidence is in the uncertain zone."
