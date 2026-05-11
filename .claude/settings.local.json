@@ -26,7 +26,18 @@
       "Bash(./.venv311/Scripts/python -m src.app --worker ai-auto)",
       "Bash(..venvScriptspython scripts/migrate_milvus_collection.py)",
       "Bash(./.venv/Scripts/python scripts/migrate_milvus_collection.py)",
-      "Bash(./.venv/Scripts/python scripts/init_seed_data.py)"
+      "Bash(./.venv/Scripts/python scripts/init_seed_data.py)",
+      "Bash(python -c \"from src.decision.extended_gateway import ExtendedConfidenceGateway; print\\(''ExtendedConfidenceGateway OK''\\)\")",
+      "Bash(python -c \"from src.reasoning.multi_agent.contracts import ThinkingChain, AssistantObjection, ReviewSession; print\\(''contracts OK''\\)\")",
+      "Bash(python -m py_compile src/reasoning/multi_agent/contracts.py)",
+      "Bash(python -m py_compile src/decision/extended_gateway.py)",
+      "Bash(python -m py_compile src/reasoning/multi_agent/decision_maker.py)",
+      "Bash(python -m py_compile src/reasoning/multi_agent/logic_assistant.py)",
+      "Bash(python -m py_compile src/reasoning/multi_agent/evidence_assistant.py)",
+      "Bash(python -m py_compile src/reasoning/multi_agent/supervisor.py)",
+      "Bash(python -m py_compile src/engine/audit_engine.py)",
+      "mcp__websearch__search",
+      "Bash(.venv/Scripts/python -m py_compile src/tool/keyframe_extractor.py src/engine/video_audit_engine.py src/engine/audit_engine.py src/app.py)"
     ]
   }
 }
