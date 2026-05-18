@@ -21,9 +21,20 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+# 尝试加载环境变量文件
+env_path = ROOT / ".env.dev"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, override=False)
+else:
+    env_path = ROOT / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path, override=False)
 
 from src.feature.embedder import build_embedding_model
 from src.prelabel.text_nb import NaiveBayesTextClassifier

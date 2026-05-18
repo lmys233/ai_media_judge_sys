@@ -6,6 +6,9 @@ import logging
 import os
 import signal
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -325,6 +328,17 @@ WORKERS = {
 
 
 def main() -> None:
+    # 优先加载环境变量文件（.env.dev 覆盖 .env）
+    env_path = Path(__file__).parent.parent / ".env.dev"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path, override=False)
+        logger.info("已加载环境变量文件: %s", env_path)
+    else:
+        env_path = Path(__file__).parent.parent / ".env"
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path, override=False)
+            logger.info("已加载环境变量文件: %s", env_path)
+
     # 加载 config.yaml 配置（命令行参数会覆盖这些值）
     _load_config_yaml()
 

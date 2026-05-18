@@ -1,0 +1,27 @@
+# Claude Code 配置
+.claude/
+
+# 环境变量文件（含实际密钥，禁止上传）
+.env
+.env.dev
+.env.local
+.env.production
+
+# Maven 构建产物（含配置文件副本）
+**/target/
+
+# IDE 配置
+.idea/
+*.iml
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# 操作系统
+.DS_Store
+Thumbs.db

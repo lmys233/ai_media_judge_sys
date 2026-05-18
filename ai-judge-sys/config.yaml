@@ -1,0 +1,28 @@
+# AI Judge System 配置文件
+
+# LLM 配置（所有组件共用）
+llm:
+  provider: qwen          # qwen | openai | anthropic
+  api_key: ""             # 从 .env.dev 加载（通过 DASHSCOPE_API_KEY 等环境变量）
+  model: ""               # 模型名称（可选，有默认值）
+  base_url: ""            # API Base URL（可选，用于代理）
+
+# MinIO 配置
+minio:
+  endpoint: "http://localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin123"
+  bucket: "judge-media"
+
+# RabbitMQ 配置
+rabbitmq:
+  host: "localhost"
+  port: 5672
+  username: "admin"
+  password: "admin123"
+  vhost: "/"
+
+# Milvus 配置
+milvus:
+  host: "localhost"
+  port: 19530

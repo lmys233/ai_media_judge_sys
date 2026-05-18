@@ -15,8 +15,20 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # 确保 src 目录在 path 里
-sys.path.insert(0, str(Path(__file__).parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+# 尝试加载环境变量文件
+env_path = ROOT / ".env.dev"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, override=False)
+else:
+    env_path = ROOT / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path, override=False)
 
 from pymilvus import connections, utility, Collection
 
